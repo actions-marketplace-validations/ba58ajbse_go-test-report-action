@@ -1,15 +1,15 @@
 # Go Test Results Action
 
-Go テストの実行から結果の可視化までを一括で行う GitHub Composite Action です。
-テスト結果を PR コメントおよび Actions Job Summary に表示します。
+A GitHub Composite Action that executes Go tests and visualizes the results in one step.
+Test results are displayed in PR comments and Actions Job Summary.
 
 ## Features
 
-- `go test` の実行・JSON パース・結果表示をワンステップで実行
-- PR コメントにテスト結果サマリーと失敗テストのログを投稿
-- Actions Job Summary に全テストの詳細テーブルを表示
-- 既存コメントの自動更新（同一 PR への再実行時）
-- テスト数（pass / fail / skip）と実行時間の集計
+- Execute `go test`, parse JSON, and display results in one step
+- Post test result summary and failed test logs to PR comments
+- Display detailed table of all tests in Actions Job Summary
+- Automatically update existing comments (when re-running on the same PR)
+- Aggregate test counts (pass / fail / skip) and execution time
 
 ## Usage
 
@@ -37,33 +37,33 @@ Go テストの実行から結果の可視化までを一括で行う GitHub Com
 
 | Name | Required | Default | Description |
 |------|----------|---------|-------------|
-| `test-path` | No | `./...` | テスト対象の Go パッケージパターン |
-| `working-directory` | No | `.` | `go test` の実行ディレクトリ（go.mod の場所） |
-| `test-flags` | No | `""` | `go test` への追加フラグ（`-race`, `-count=1` など） |
-| `token` | No | `${{ github.token }}` | PR コメント投稿用の GitHub トークン |
-| `post-comment` | No | `"true"` | PR コメントを投稿するかどうか (`"true"` / `"false"`) |
-| `comment-tag` | No | `"go-test-results"` | コメント識別用タグ（同一タグのコメントを更新） |
+| `test-path` | No | `./...` | Go package pattern to test |
+| `working-directory` | No | `.` | Directory to run `go test` in (where go.mod is located) |
+| `test-flags` | No | `""` | Additional flags to pass to `go test` (e.g., `-race`, `-count=1`) |
+| `token` | No | `${{ github.token }}` | GitHub token for posting PR comments |
+| `post-comment` | No | `"true"` | Whether to post results as a PR comment (`"true"` / `"false"`) |
+| `comment-tag` | No | `"go-test-results"` | Tag to identify the comment for updates (updates comments with the same tag) |
 
 ## Outputs
 
 | Name | Description |
 |------|-------------|
-| `total` | テスト総数 |
-| `passed` | 成功したテスト数 |
-| `failed` | 失敗したテスト数 |
-| `skipped` | スキップされたテスト数 |
-| `elapsed` | 合計実行時間（秒） |
-| `summary` | Markdown 形式のテスト結果サマリー |
+| `total` | Total number of tests |
+| `passed` | Number of passed tests |
+| `failed` | Number of failed tests |
+| `skipped` | Number of skipped tests |
+| `elapsed` | Total elapsed time in seconds |
+| `summary` | Markdown-formatted test result summary |
 
 ## Display
 
 ### PR Comment
 
-サマリーテーブル（テスト数・実行時間）と失敗テストのログを表示します。
+Displays a summary table (test counts and execution time) and logs of failed tests.
 
 ### Actions Job Summary
 
-サマリーテーブルに加え、全テストのステータス・パッケージ・実行時間の詳細テーブルを表示します。
+Displays a summary table along with a detailed table of all tests including status, package, and execution time.
 
 ## License
 
