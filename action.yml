@@ -1,0 +1,59 @@
+name: "Go Test Results"
+description: "Parse go test -json output and post results as a PR comment"
+
+inputs:
+  test-results-file:
+    description: "Path to the go test -json output file"
+    required: true
+  token:
+    description: "GitHub token for posting PR comments"
+    required: false
+    default: ${{ github.token }}
+  comment-tag:
+    description: "Tag to identify the comment for updates"
+    required: false
+    default: "go-test-results"
+
+outputs:
+  total:
+    description: "Total number of tests"
+    value: ${{ steps.parse.outputs.total }}
+  passed:
+    description: "Number of passed tests"
+    value: ${{ steps.parse.outputs.passed }}
+  failed:
+    description: "Number of failed tests"
+    value: ${{ steps.parse.outputs.failed }}
+  skipped:
+    description: "Number of skipped tests"
+    value: ${{ steps.parse.outputs.skipped }}
+  summary:
+    description: "Markdown summary of test results"
+    value: ${{ steps.format.outputs.summary }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Parse test results
+      id: parse
+      shell: bash
+      run: bash ${{ github.action_path }}/scripts/parse-results.sh "${{ inputs.test-results-file }}"
+
+    - name: Format summary
+      id: format
+      shell: bash
+      run: bash ${{ github.action_path }}/scripts/format-summary.sh "${{ inputs.comment-tag }}"
+      env:
+        TOTAL: ${{ steps.parse.outputs.total }}
+        PASSED: ${{ steps.parse.outputs.passed }}
+        FAILED: ${{ steps.parse.outputs.failed }}
+        SKIPPED: ${{ steps.parse.outputs.skipped }}
+        FAILED_DETAILS_FILE: ${{ runner.temp }}/go-test-failed-details.json
+
+    - name: Post PR comment
+      if: github.event_name == 'pull_request'
+      shell: bash
+      run: bash ${{ github.action_path }}/scripts/post-comment.sh "${{ inputs.comment-tag }}"
+      env:
+        GITHUB_TOKEN: ${{ inputs.token }}
+        SUMMARY_FILE: ${{ runner.temp }}/go-test-summary.md
