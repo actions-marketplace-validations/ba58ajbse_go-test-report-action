@@ -1,14 +1,27 @@
 name: "Go Test Results"
-description: "Parse go test -json output and post results as a PR comment"
+description: "Run go tests and post results as a PR comment and Actions Job Summary"
 
 inputs:
-  test-results-file:
-    description: "Path to the go test -json output file"
-    required: true
+  test-path:
+    description: "Go package pattern to test"
+    required: false
+    default: "./..."
+  working-directory:
+    description: "Directory to run go test in (where go.mod is located)"
+    required: false
+    default: "."
+  test-flags:
+    description: "Additional flags to pass to go test (e.g. -race -count=1 -timeout 30s)"
+    required: false
+    default: ""
   token:
     description: "GitHub token for posting PR comments"
     required: false
     default: ${{ github.token }}
+  post-comment:
+    description: "Whether to post results as a PR comment (true/false)"
+    required: false
+    default: "true"
   comment-tag:
     description: "Tag to identify the comment for updates"
     required: false
@@ -27,6 +40,9 @@ outputs:
   skipped:
     description: "Number of skipped tests"
     value: ${{ steps.parse.outputs.skipped }}
+  elapsed:
+    description: "Total elapsed time in seconds"
+    value: ${{ steps.parse.outputs.elapsed }}
   summary:
     description: "Markdown summary of test results"
     value: ${{ steps.format.outputs.summary }}
@@ -34,10 +50,19 @@ outputs:
 runs:
   using: "composite"
   steps:
+    - name: Run tests
+      id: test
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: bash ${{ github.action_path }}/scripts/run-tests.sh "${{ inputs.test-path }}"
+      env:
+        TEST_FLAGS: ${{ inputs.test-flags }}
+        RESULTS_FILE: ${{ runner.temp }}/go-test-results.json
+
     - name: Parse test results
       id: parse
       shell: bash
-      run: bash ${{ github.action_path }}/scripts/parse-results.sh "${{ inputs.test-results-file }}"
+      run: bash ${{ github.action_path }}/scripts/parse-results.sh "${{ runner.temp }}/go-test-results.json"
 
     - name: Format summary
       id: format
@@ -48,12 +73,21 @@ runs:
         PASSED: ${{ steps.parse.outputs.passed }}
         FAILED: ${{ steps.parse.outputs.failed }}
         SKIPPED: ${{ steps.parse.outputs.skipped }}
+        ELAPSED: ${{ steps.parse.outputs.elapsed }}
         FAILED_DETAILS_FILE: ${{ runner.temp }}/go-test-failed-details.json
+        ALL_TESTS_FILE: ${{ runner.temp }}/go-test-all-details.json
 
     - name: Post PR comment
-      if: github.event_name == 'pull_request'
+      if: github.event_name == 'pull_request' && inputs.post-comment == 'true'
       shell: bash
       run: bash ${{ github.action_path }}/scripts/post-comment.sh "${{ inputs.comment-tag }}"
       env:
         GITHUB_TOKEN: ${{ inputs.token }}
         SUMMARY_FILE: ${{ runner.temp }}/go-test-summary.md
+
+    - name: Check test results
+      if: steps.parse.outputs.failed > 0
+      shell: bash
+      run: |
+        echo "::error::${{ steps.parse.outputs.failed }} test(s) failed"
+        exit 1

@@ -10,6 +10,11 @@ fi
 
 failed_details_file="${RUNNER_TEMP:-/tmp}/go-test-failed-details.json"
 
+# Filter to valid JSON lines only (go test -json may include non-JSON output)
+filtered_file="${RUNNER_TEMP:-/tmp}/go-test-filtered.json"
+grep '^\s*{' "$results_file" | jq -c '.' 2>/dev/null > "$filtered_file" || true
+results_file="$filtered_file"
+
 # Parse go test -json output using jq
 # Count pass/fail/skip from test-level events (where .Test is present)
 jq -s '
@@ -27,21 +32,30 @@ passed=$(jq -r '.passed' "${RUNNER_TEMP:-/tmp}/go-test-counts.json")
 failed=$(jq -r '.failed' "${RUNNER_TEMP:-/tmp}/go-test-counts.json")
 skipped=$(jq -r '.skipped' "${RUNNER_TEMP:-/tmp}/go-test-counts.json")
 
-# Extract failed test details: name, package, elapsed time, and output log
+# Calculate total elapsed time from package-level events
+elapsed=$(jq -s '
+  [.[] | select(.Test == null and (.Action == "pass" or .Action == "fail")) | .Elapsed // 0] | add // 0
+' "$results_file")
+
+# Extract all test details: name, package, result, elapsed time
+all_tests_file="${RUNNER_TEMP:-/tmp}/go-test-all-details.json"
 jq -s '
   [.[] | select(.Test != null)] |
   group_by(.Package + "/" + .Test) |
   [
     .[] |
-    select(any(.[]; .Action == "fail")) |
     {
       test: .[0].Test,
       package: .[0].Package,
-      elapsed: ([.[] | select(.Action == "fail") | .Elapsed // 0] | first),
+      action: ([.[] | select(.Action == "pass" or .Action == "fail" or .Action == "skip") | .Action] | last),
+      elapsed: ([.[] | select(.Action == "pass" or .Action == "fail" or .Action == "skip") | .Elapsed // 0] | last),
       output: ([.[] | select(.Action == "output") | .Output] | join(""))
     }
   ]
-' "$results_file" > "$failed_details_file"
+' "$results_file" > "$all_tests_file"
+
+# Extract failed test details (subset for backward compat)
+jq '[.[] | select(.action == "fail")]' "$all_tests_file" > "$failed_details_file"
 
 # Set outputs
 {
@@ -49,6 +63,7 @@ jq -s '
   echo "passed=$passed"
   echo "failed=$failed"
   echo "skipped=$skipped"
+  echo "elapsed=$elapsed"
 } >> "$GITHUB_OUTPUT"
 
-echo "Parsed test results: total=$total passed=$passed failed=$failed skipped=$skipped"
+echo "Parsed test results: total=$total passed=$passed failed=$failed skipped=$skipped elapsed=${elapsed}s"
