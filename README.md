@@ -20,13 +20,13 @@ Test results are displayed in PR comments and Actions Job Summary.
 - uses: actions/setup-go@v5
   with:
     go-version: "1.25"
-- uses: ba58ajbse/go-test-report-action@main
+- uses: ba58ajbse/go-test-report-action@v1
 ```
 
 ### With options
 
 ```yaml
-- uses: ba58ajbse/go-test-report-action@main
+- uses: ba58ajbse/go-test-report-action@v1
   with:
     test-path: "./internal/..."
     working-directory: "backend"

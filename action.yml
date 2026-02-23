@@ -1,5 +1,10 @@
-name: "Go Test Results"
-description: "Run go tests and post results as a PR comment and Actions Job Summary"
+name: "Go Test Report"
+description: "Run Go tests and report results as PR comments and Job Summary"
+author: "ba58ajbse"
+
+branding:
+  icon: "check-circle"
+  color: "green"
 
 inputs:
   test-path:
