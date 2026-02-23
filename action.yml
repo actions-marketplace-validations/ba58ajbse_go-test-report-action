@@ -1,4 +1,4 @@
-name: "Go Test Report"
+name: "Go Test PR Reporter"
 description: "Run Go tests and report results as PR comments and Job Summary"
 author: "ba58ajbse"
 

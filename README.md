@@ -1,4 +1,4 @@
-# Go Test Results Action
+# Go Test PR Reporter
 
 A GitHub Composite Action that executes Go tests and visualizes the results in one step.
 Test results are displayed in PR comments and Actions Job Summary.
