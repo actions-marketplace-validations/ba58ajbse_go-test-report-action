@@ -42,7 +42,7 @@ Test results are displayed in PR comments and Actions Job Summary.
 | `test-flags` | No | `""` | Additional flags to pass to `go test` (e.g., `-race`, `-count=1`) |
 | `token` | No | `${{ github.token }}` | GitHub token for posting PR comments |
 | `post-comment` | No | `"true"` | Whether to post results as a PR comment (`"true"` / `"false"`) |
-| `comment-tag` | No | `"go-test-results"` | Tag to identify the comment for updates (updates comments with the same tag) |
+| `comment-tag` | No | `"go-test-results-${{ github.workflow }}"` | Tag to identify the comment for updates. Defaults include the workflow name, so each workflow posts a separate comment. Override to customize. |
 
 ## Outputs
 

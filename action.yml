@@ -23,9 +23,9 @@ inputs:
     required: false
     default: "true"
   comment-tag:
-    description: "Tag to identify the comment for updates"
+    description: "Tag to identify the comment for updates (must be unique per workflow to avoid overwriting)"
     required: false
-    default: "go-test-results"
+    default: "go-test-results-${{ github.workflow }}"
 
 outputs:
   total:
